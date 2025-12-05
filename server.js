@@ -5,9 +5,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 
 // Importar rutas
-const authRoutes = require('./routes/auth');
-const postsRoutes = require('./routes/posts');
-const commentsRoutes = require('./routes/comments');
+const authRoutes = require('./src/routes/auth');
+const postsRoutes = require('./src/routes/posts');
+const commentsRoutes = require('./src/routes/comments');
 
 // Crear aplicación
 const app = express();
