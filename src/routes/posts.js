@@ -7,7 +7,8 @@ const {
   getPostById,
   createPost,
   updatePost,
-  deletePost
+  deletePost,
+  categorias
 } = require('../controllers/postsController');
 
 const router = express.Router();
@@ -50,7 +51,8 @@ router.post('/',
     body('titulo').trim().isLength({ min: 3, max: 200 }).withMessage('Título debe tener entre 3 y 200 caracteres'),
     body('contenido').trim().isLength({ min: 10 }).withMessage('Contenido debe tener al menos 10 caracteres'),
     body('etiquetas').optional().isArray({ max: 10 }).withMessage('Máximo 10 etiquetas'),
-    body('estado').optional().isIn(['borrador', 'publicado', 'archivado']).withMessage('Estado inválido')
+    body('estado').optional().isIn(['borrador', 'publicado', 'archivado']).withMessage('Estado inválido'),
+    body('categoria').optional().isIn(Object.keys(categorias)).withMessage('Categoría inválida')
   ],
   validarErrores,
   createPost

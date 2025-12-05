@@ -58,7 +58,7 @@ app.use((req, res, next) => {
 
 // Rutas de la API
 app.use('/api/auth', authRoutes);
-app.use('/api', postsRoutes);
+app.use('/api/posts', postsRoutes);
 app.use('/api', commentsRoutes);
 
 // Documentación OpenAPI básica

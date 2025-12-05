@@ -2,6 +2,17 @@
 const { v4: uuidv4 } = require('uuid');
 
 // Base de datos simulada
+const categorias = {
+  tecnologia: "Tecnología",
+  viajes: "Viajes",
+  deportes: "Deportes",
+  entretenimiento: "Entretenimiento",
+  videojuegos: "Videojuegos",
+  politica: "Política",
+  economia: "Economía",
+  miscelaneo: "Miscelaneo"
+}
+
 let posts = [
   {
     id: uuidv4(),
@@ -12,7 +23,8 @@ let posts = [
     estado: 'publicado',
     fechaCreacion: new Date().toISOString(),
     fechaActualizacion: new Date().toISOString(),
-    visitas: 0
+    visitas: 0,
+    categoria: categorias.miscelaneo
   }
 ];
 
@@ -24,6 +36,7 @@ async function getPosts(req, res) {
       autor,
       estado,
       etiqueta,
+      categoria,
       busqueda,
       ordenar = 'fechaCreacion',
       pagina = 1,
@@ -43,6 +56,10 @@ async function getPosts(req, res) {
       resultados = resultados.filter(p =>
         p.etiquetas.includes(etiqueta)
       );
+    }
+
+    if (categoria){
+      resultados = resultados.filter(p => p.categoria === categoria);
     }
 
     // Búsqueda
@@ -120,7 +137,7 @@ async function getPostById(req, res) {
 // Crear nuevo post
 async function createPost(req, res) {
   try {
-    const { titulo, contenido, etiquetas, estado } = req.body;
+    const { titulo, contenido, etiquetas, estado, categoria } = req.body;
     const autor = req.user.username;
 
     const nuevoPost = {
@@ -132,7 +149,8 @@ async function createPost(req, res) {
       estado: estado || 'borrador',
       fechaCreacion: new Date().toISOString(),
       fechaActualizacion: new Date().toISOString(),
-      visitas: 0
+      visitas: 0,
+      categoria: categoria || categorias.miscelaneo
     };
 
     posts.push(nuevoPost);
@@ -169,13 +187,14 @@ async function updatePost(req, res) {
       });
     }
 
-    const { titulo, contenido, etiquetas, estado } = req.body;
+    const { titulo, contenido, etiquetas, estado, categoria } = req.body;
 
     // Actualizar campos
     if (titulo) post.titulo = titulo.trim();
     if (contenido) post.contenido = contenido.trim();
     if (etiquetas) post.etiquetas = etiquetas;
     if (estado) post.estado = estado;
+    if (categoria) post.categoria = categoria;
 
     post.fechaActualizacion = new Date().toISOString();
 
@@ -234,5 +253,6 @@ module.exports = {
   createPost,
   updatePost,
   deletePost,
-  posts
+  posts,
+  categorias
 };
