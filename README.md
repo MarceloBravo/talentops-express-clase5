@@ -5,7 +5,7 @@
 - sistema de likes/votes para posts y comentarios, y 
 - un dashboard administrativo con estadísticas.
 
-# -----------------------------------------------------------------------------------------
+# ----------------------------------------
 
 ### Instalación de librerías
 
