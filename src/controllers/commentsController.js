@@ -94,7 +94,8 @@ async function createComment(req, res) {
       email: email ? email.trim() : null,
       contenido: contenido.trim(),
       estado: 'pendiente', // Comentarios nuevos necesitan aprobación
-      fechaCreacion: new Date().toISOString()
+      fechaCreacion: new Date().toISOString(),
+      likes: 0
     };
 
     comments.push(nuevoComment);
@@ -109,6 +110,30 @@ async function createComment(req, res) {
     res.status(500).json({
       error: 'Error interno del servidor'
     });
+  }
+}
+
+// Dar like a un comentario
+async function likeComment(req, res) {
+  try {
+    const { id } = req.params;
+    const comment = comments.find(c => c.id === id);
+
+    if (!comment) {
+      return res.status(404).json({ error: 'Comentario no encontrado' });
+    }
+
+    // Si 'likes' no existe, lo inicializamos
+    if (typeof comment.likes !== 'number') {
+      comment.likes = 0;
+    }
+
+    comment.likes += 1;
+
+    res.json({ message: 'Comentario likeado exitosamente.', comment });
+  } catch (error) {
+    console.error('Error al dar like al comentario:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -205,5 +230,6 @@ module.exports = {
   getCommentsByPost,
   createComment,
   updateCommentStatus,
-  deleteComment
+  deleteComment,
+  likeComment
 };

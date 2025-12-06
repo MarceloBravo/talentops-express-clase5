@@ -6,7 +6,8 @@ const {
   getCommentsByPost,
   createComment,
   updateCommentStatus,
-  deleteComment
+  deleteComment,
+  likeComment
 } = require('../controllers/commentsController');
 
 const router = express.Router();
@@ -22,6 +23,13 @@ const validarErrores = (req, res, next) => {
   }
   next();
 };
+
+// POST /comments/:id/like - Dar like a un comentario (público)
+router.post('/comments/:id/like',
+  param('id').isUUID().withMessage('ID de comentario debe ser un UUID válido'),
+  validarErrores,
+  likeComment
+);
 
 // GET /posts/:postId/comments - Obtener comentarios de un post (público)
 router.get('/posts/:postId/comments',

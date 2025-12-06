@@ -136,7 +136,9 @@ async function createPost(req, res) {
       fechaCreacion: new Date().toISOString(),
       fechaActualizacion: new Date().toISOString(),
       visitas: 0,
-      categoria: categoria || categorias.miscelaneo
+      categoria: categoria || categorias.miscelaneo,
+      likes: 0,
+      likedBy: []
     };
 
     posts.push(nuevoPost);
@@ -151,6 +153,41 @@ async function createPost(req, res) {
     res.status(500).json({
       error: 'Error interno del servidor'
     });
+  }
+}
+
+// Dar like/unlike a un post
+async function likePost(req, res) {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const post = posts.find(p => p.id === id);
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post no encontrado' });
+    }
+
+    // Asegurarse de que likedBy exista
+    if (!post.likedBy) {
+      post.likedBy = [];
+    }
+
+    const userIndex = post.likedBy.indexOf(userId);
+
+    if (userIndex > -1) {
+      // Usuario ya dio like, entonces quitarlo (unlike)
+      post.likedBy.splice(userIndex, 1);
+      post.likes = post.likedBy.length;
+      res.json({ message: 'Like eliminado del post.', post });
+    } else {
+      // Usuario no ha dado like, entonces agregarlo
+      post.likedBy.push(userId);
+      post.likes = post.likedBy.length;
+      res.json({ message: 'Post likeado exitosamente.', post });
+    }
+  } catch (error) {
+    console.error('Error al dar like al post:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -239,6 +276,7 @@ module.exports = {
   createPost,
   updatePost,
   deletePost,
+  likePost,
   posts,
   categorias
 };

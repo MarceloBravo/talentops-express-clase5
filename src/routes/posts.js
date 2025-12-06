@@ -8,6 +8,7 @@ const {
   createPost,
   updatePost,
   deletePost,
+  likePost,
   categorias
 } = require('../controllers/postsController');
 
@@ -24,6 +25,14 @@ const validarErrores = (req, res, next) => {
   }
   next();
 };
+
+// POST /posts/:id/like - Dar like/unlike a un post
+router.post('/:id/like',
+  authenticate,
+  param('id').isUUID().withMessage('ID debe ser un UUID válido'),
+  validarErrores,
+  likePost
+);
 
 // GET /posts - Listar posts (público)
 router.get('/',
