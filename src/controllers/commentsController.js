@@ -231,5 +231,6 @@ module.exports = {
   createComment,
   updateCommentStatus,
   deleteComment,
-  likeComment
+  likeComment,
+  comments
 };

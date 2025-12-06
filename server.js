@@ -8,6 +8,7 @@ const helmet = require('helmet');
 const authRoutes = require('./src/routes/auth');
 const postsRoutes = require('./src/routes/posts');
 const commentsRoutes = require('./src/routes/comments');
+const dashboardRoutes = require('./src/routes/dashboard');
 
 // Crear aplicación
 const app = express();
@@ -60,6 +61,8 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api', commentsRoutes);
+app.use('/admin', dashboardRoutes); // Ruta para el dashboard HTML
+app.use('/api/dashboard', dashboardRoutes); // Ruta para la API de estadísticas
 
 // Documentación OpenAPI básica
 app.get('/api/docs', (req, res) => {

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        h1, h2 { color: #333; }
+        .container { max-width: 1200px; margin: auto; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background-color: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stat-card h3 { margin-top: 0; color: #555; }
+        .stat-card .value { font-size: 2em; font-weight: bold; color: #007bff; }
+        .list-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .list-card { background-color: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .list-card h2 { border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .list-card ul { list-style: none; padding: 0; }
+        .list-card li { padding: 10px 0; border-bottom: 1px solid #eee; }
+        .list-card li:last-child { border-bottom: none; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+        <div id="loading">Cargando estadísticas...</div>
+        <div class="error" id="error-message" style="display: none;"></div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total de Posts</h3>
+                <div id="total-posts" class="value">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total de Comentarios</h3>
+                <div id="total-comments" class="value">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Posts por Estado</h3>
+                <div id="posts-by-status"></div>
+            </div>
+            <div class="stat-card">
+                <h3>Comentarios por Estado</h3>
+                <div id="comments-by-status"></div>
+            </div>
+        </div>
+
+        <div class="list-grid">
+            <div class="list-card">
+                <h2>Últimos Posts</h2>
+                <ul id="latest-posts"></ul>
+            </div>
+            <div class="list-card">
+                <h2>Últimos Comentarios</h2>
+                <ul id="latest-comments"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', fetchStats);
+
+        async function fetchStats() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showError('No estás autenticado. Por favor, inicia sesión.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/dashboard/stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 403) {
+                    showError('No tienes permiso para ver esta página.');
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(`Error del servidor: ${response.statusText}`);
+                }
+
+                const stats = await response.json();
+                displayStats(stats);
+
+            } catch (error) {
+                showError(`Error al cargar las estadísticas: ${error.message}`);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function displayStats(stats) {
+            document.getElementById('total-posts').textContent = stats.totalPosts;
+            document.getElementById('total-comments').textContent = stats.totalComments;
+            
+            const postsStatusDiv = document.getElementById('posts-by-status');
+            postsStatusDiv.innerHTML = '';
+            for (const status in stats.postsByStatus) {
+                postsStatusDiv.innerHTML += `<span>${status}: <strong>${stats.postsByStatus[status]}</strong></span><br>`;
+            }
+
+            const commentsStatusDiv = document.getElementById('comments-by-status');
+            commentsStatusDiv.innerHTML = '';
+            for (const status in stats.commentsByStatus) {
+                commentsStatusDiv.innerHTML += `<span>${status}: <strong>${stats.commentsByStatus[status]}</strong></span><br>`;
+            }
+
+            const latestPostsUl = document.getElementById('latest-posts');
+            latestPostsUl.innerHTML = '';
+            stats.latestPosts.forEach(post => {
+                const li = document.createElement('li');
+                li.textContent = `${post.title} (Autor: ${post.author})`;
+                latestPostsUl.appendChild(li);
+            });
+
+            const latestCommentsUl = document.getElementById('latest-comments');
+            latestCommentsUl.innerHTML = '';
+            stats.latestComments.forEach(comment => {
+                const li = document.createElement('li');
+                li.textContent = `"${comment.content}" (Post ID: ${comment.postId})`;
+                latestCommentsUl.appendChild(li);
+            });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
