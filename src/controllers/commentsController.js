@@ -1,6 +1,7 @@
 // controllers/commentsController.js
 const posts = require('./postsController').posts;
 const { v4: uuidv4 } = require('uuid');
+const { createTestTransporter } = require('../config/mailer');
 
 // Base de datos simulada
 let comments = [
@@ -10,10 +11,17 @@ let comments = [
     autor: 'Usuario Anónimo',
     email: 'usuario@example.com',
     contenido: 'Excelente primer post!',
-    estado: 'aprobado',
+    estado: 'pendiente',
     fechaCreacion: new Date().toISOString()
   }
 ];
+
+// Inicializamos el mailer al arrancar el controlador
+let mailer;
+createTestTransporter().then(result => {
+  mailer = result;
+}).catch(console.error);
+
 
 // Obtener comentarios de un post
 async function getCommentsByPost(req, res) {
@@ -31,9 +39,11 @@ async function getCommentsByPost(req, res) {
 
     let resultados = comments.filter(c => c.postId === postId);
 
-    // Filtrar por estado
+    // Filtrar por estado. Por defecto, solo se muestran los aprobados.
     if (estado) {
       resultados = resultados.filter(c => c.estado === estado);
+    } else {
+      resultados = resultados.filter(c => c.estado === 'aprobado');
     }
 
     // Ordenar por fecha (más recientes primero)
@@ -125,7 +135,31 @@ async function updateCommentStatus(req, res) {
       });
     }
 
+    const estadoAnterior = comment.estado;
     comment.estado = estado;
+
+    // Si el comentario se acaba de aprobar, enviar email
+    if (estado === 'aprobado' && estadoAnterior !== 'aprobado' && comment.email) {
+      if (mailer) {
+        try {
+          const info = await mailer.transporter.sendMail({
+            from: '"Blog API" <no-reply@blog.com>',
+            to: comment.email,
+            subject: 'Tu comentario ha sido aprobado',
+            text: `¡Hola ${comment.autor}!\n\nTu comentario "${comment.contenido.substring(0, 30)}..." ha sido aprobado y ya está visible públicamente.\n\nGracias por participar.`,
+            html: `<p>¡Hola ${comment.autor}!</p><p>Tu comentario "<i>${comment.contenido.substring(0, 30)}...</i>" ha sido aprobado y ya está visible públicamente.</p><p>Gracias por participar.</p>`
+          });
+
+          console.log('Email de notificación enviado. Preview URL: %s', mailer.getTestMessageUrl(info));
+        } catch (emailError) {
+          console.error('Error al enviar el email de notificación:', emailError);
+          // No bloqueamos la respuesta por un fallo en el email, pero lo registramos.
+        }
+      } else {
+        console.warn('El servicio de correo no está inicializado. No se pudo enviar la notificación.');
+      }
+    }
+
 
     res.json({
       message: 'Estado del comentario actualizado',
