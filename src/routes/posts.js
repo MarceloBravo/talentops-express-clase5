@@ -43,6 +43,17 @@ router.get('/:id',
   getPostById
 );
 
+// POST /posts/search - Busqueda con Elasticsearch-like queries (público)
+router.post('/search',
+  [
+    query('pagina').optional().isInt({ min: 1 }).withMessage('Página debe ser un número positivo'),
+    query('limite').optional().isInt({ min: 1, max: 100 }).withMessage('Límite debe estar entre 1 y 100'),
+    query('ordenar').optional().isIn(['titulo', 'visitas', 'fechaCreacion']).withMessage('Ordenamiento inválido')
+  ],
+  validarErrores,
+  getPosts
+);
+
 // POST /posts - Crear post (requiere autenticación)
 router.post('/',
   authenticate,

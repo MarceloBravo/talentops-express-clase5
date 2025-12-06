@@ -1,4 +1,6 @@
 // controllers/postsController.js
+const { processQueryDSL } = require('../utils/searchProcessor');
+
 const { v4: uuidv4 } = require('uuid');
 
 // Base de datos simulada
@@ -28,63 +30,48 @@ let posts = [
   }
 ];
 
+
+
 // Obtener todos los posts
 async function getPosts(req, res) {
   try {
     let resultados = [...posts];
-    const {
-      autor,
-      estado,
-      etiqueta,
-      categoria,
-      busqueda,
-      ordenar = 'fechaCreacion',
-      pagina = 1,
-      limite = 10
-    } = req.query;
 
-    // Filtros
-    if (autor) {
-      resultados = resultados.filter(p => p.autor === autor);
-    }
+    // Diferenciar entre búsqueda avanzada (POST) y búsqueda simple (GET)
+    const isAdvancedSearch = req.method === 'POST' && req.body && Object.keys(req.body).length > 0;
 
-    if (estado) {
-      resultados = resultados.filter(p => p.estado === estado);
-    }
+    if (isAdvancedSearch) {
+      // Búsqueda avanzada con Elasticsearch-like DSL
+      resultados = processQueryDSL(resultados, req.body);
+    } else {
+      // Búsqueda y filtros simples desde query params (GET)
+      const { autor, estado, etiqueta, categoria, busqueda, ordenar = 'fechaCreacion' } = req.query;
 
-    if (etiqueta) {
-      resultados = resultados.filter(p =>
-        p.etiquetas.includes(etiqueta)
-      );
-    }
-
-    if (categoria){
-      resultados = resultados.filter(p => p.categoria === categoria);
-    }
-
-    // Búsqueda
-    if (busqueda) {
-      const termino = busqueda.toLowerCase();
-      resultados = resultados.filter(p =>
-        p.titulo.toLowerCase().includes(termino) ||
-        p.contenido.toLowerCase().includes(termino)
-      );
-    }
-
-    // Ordenamiento
-    resultados.sort((a, b) => {
-      switch (ordenar) {
-        case 'titulo':
-          return a.titulo.localeCompare(b.titulo);
-        case 'visitas':
-          return b.visitas - a.visitas;
-        case 'fechaCreacion':
-        default:
-          return new Date(b.fechaCreacion) - new Date(a.fechaCreacion);
+      if (autor) resultados = resultados.filter(p => p.autor === autor);
+      if (estado) resultados = resultados.filter(p => p.estado === estado);
+      if (etiqueta) resultados = resultados.filter(p => p.etiquetas.includes(etiqueta));
+      if (categoria) resultados = resultados.filter(p => p.categoria === categoria);
+      if (busqueda) {
+        const termino = busqueda.toLowerCase();
+        resultados = resultados.filter(p =>
+          p.titulo.toLowerCase().includes(termino) ||
+          p.contenido.toLowerCase().includes(termino)
+        );
       }
-    });
 
-    // Paginación
+      // Ordenamiento para GET
+      resultados.sort((a, b) => {
+        switch (ordenar) {
+          case 'titulo': return a.titulo.localeCompare(b.titulo);
+          case 'visitas': return b.visitas - a.visitas;
+          case 'fechaCreacion':
+          default: return new Date(b.fechaCreacion) - new Date(a.fechaCreacion);
+        }
+      });
+    }
+
+    // Paginación (se aplica a ambos tipos de búsqueda)
+    const { pagina = 1, limite = 10 } = req.query;
     const paginaNum = parseInt(pagina);
     const limiteNum = parseInt(limite);
     const inicio = (paginaNum - 1) * limiteNum;
@@ -97,8 +84,7 @@ async function getPosts(req, res) {
         pagina: paginaNum,
         limite: limiteNum,
         paginasTotal: Math.ceil(resultados.length / limiteNum)
-      },
-      filtros: req.query
+      }
     });
 
   } catch (error) {
